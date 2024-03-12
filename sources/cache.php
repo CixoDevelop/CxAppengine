@@ -2,6 +2,48 @@
 
 namespace cx_appengine;
 
+require_once(__DIR__.'/string_builder.php');
+require_once(__DIR__.'/directory.php');
+
+/**
+ * This is cases for the cache exception.
+ */
+enum cache_exception_case {
+    
+    /** 
+     * This is thrown when file not exists.
+     */
+    case not_exists;
+
+    /** 
+     * This is thrown when file is not readable.
+     */
+    case not_readable;
+
+}
+
+/** 
+ * This class is exception for the cache.
+ */
+class cache_exception extends \Exception {
+    
+    /** 
+     * This function create new exception.
+     *
+     * @param cache_exception_case $case Exception which would be thrown.
+     */
+    public function __construct(cache_exception_case $case) {
+        match ($case) {
+            cache_exception_case::not_exists => 
+                parent::__construct('File not exists on the disk', 1000),
+
+            cache_exception_case::not_readable => 
+                parent::__construct('File can not being read', 1001),
+        };
+    }
+
+}
+
 /** 
  * This class is simple cache for files using in application. It save file
  * in local RAM, to optimize accesing to disk when trying to load same file
@@ -16,13 +58,13 @@ class cache {
      *
      * @param string $name Name (path) to the file.
      *
-     * @throws Exception code: 1000 (When file not exists).
+     * @throws cache_exception When file not exists.
      *
      * @return New cache instance.
      */
     public function __construct(string $name) {
         if (!is_file($name)) {
-            throw new Exception($name.' not exists on disk.', 1000);
+            throw new cache_exception(cache_exception_case::not_exists);
         }
 
         $this->path = realpath($name);
@@ -33,25 +75,36 @@ class cache {
      * already read from disk by this or other instance of this class, then it 
      * is not readed from disk, but from cache in RAM.
      *
-     * @throws Excepton code: 1001 (When can not access file).
+     * @throws cache_exception When can not access file.
      *
-     * @return string Content of the file.
+     * @return string_builder Content of the file.
      */
-    public function read() : string {
-        if ($this->in_cache()) return $this->from_cache();
-    
+    public function read() : string_builder {
+        if ($this->in_cache()) {
+            return new string_builder($this->from_cache());
+        }
+
         set_error_handler(function () {});
         $content = file_get_contents($this->path);
         restore_error_handler();
 
         if ($content === false) {
-            throw new Exception('Can\'t read '.$this->path.'.', 1001);
+            throw new cache_exception(cache_exception_case::not_readable);
         }
 
         $this->to_cache($content);
-        return $content;
+        return new string_builder($content);
     }
-
+    
+    /**
+     * This function return new directory wrape to directory where file is.
+     *
+     * @return directory Directory where file is.
+     */
+    public function get_directory() : directory {
+        return new directory(dirname($this->path));
+    }
+    
     /**
      * This function save content of the file to cache.
      * 

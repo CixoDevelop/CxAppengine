@@ -1,39 +1,14 @@
 <?php
 
-require_once('../sources/template.php');
+require_once(__DIR__.'/../require.php');
 
-$template = new \cx_appengine\template('./');
+$templates_directory = new \cx_appengine\directory(__DIR__.'/templates/', 'html');
+$templates = new \cx_appengine\templates($templates_directory);
 
-echo(var_dump($template->string_split('A.b.c', '.')));
-
-$t_a = $template->render_content('<< a.b.c >> UwU << OwO >>', [
-    'a' => ['b' => ['c' => 'QwQ' ]],
-    'OwO' => 'TwT'
-]);
-
-if ($t_a === 'QwQ UwU TwT') {
-    echo("Render content work...\n");
-} else {
-    echo("Render content not work...\n");
-    echo("DUMP:\n");
-    echo($t_a);
-    echo("\n");
-}
-
-file_put_contents('./test_view.html', '<< a >> UwU << c >>');
-
-$t_b = $template->render('test_view', [
-    'a' => 'b',
-    'c' => 'd'
-]);
-
-if ($t_b === 'b UwU d') {
-    echo("Render content work...\n");
-} else {
-    echo("Render content not work...\n");
-    echo("DUMP:\n");
-    echo($t_b);
-    echo("\n");
-}
+echo($templates->prepare('index')->render([
+    'UwU' => 'TEST',
+    'A' => ['B' => 'C'],
+    'D' => 'XD'
+]));
 
 ?>

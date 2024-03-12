@@ -3,174 +3,188 @@
 namespace cx_appengine;
 
 require_once(__DIR__.'/cache.php');
+require_once(__DIR__.'/string_builder.php');
 
-/** 
- * This is template parser. It manage views in the application. It rendering
- * HTML templates to show it on the user screen. In templates all attributes
- * which would to be replace by this template manager would be included in
- * the '<<' '>>' tags. Between '<<' and '>>' must be path to the param in the
- * params array. When array is nested, path to param can contain '.'. 
- * For example to get ['a']['b']['c'] use '<<a.b.c>>'.
+/**
+ * This class is used to render content from the template. It require content
+ * which is cache object to read template from it, and templates object to 
+ * create sub-templates when any sub-template is used in template. It also get
+ * dictionary from the templates object. Other, more render-specific data must
+ * be parsed by array to render function. All sentenses which must be replaced
+ * by variables must be close in {{ }}  or {{$ }}. Address in array coud be 
+ * parsed by '.', like ['A' => ['B' => 'C']] => A.B, to place content of the 
+ * other file use {{> file }}, and to translate sentense use {{? sentense }}.
  *
- * In the params can be used white chars.
- * For example '<<a.b.c>> == '<< a.b.c >>'.
+ * Examples:
+ * - {{ variable }} => ['variable' => 'new content']
+ * - {{ variable.x }} => ['variable' => ['x' => 'new content']]
+ * - {{$ variable }} => ['variable' => 'new content']
+ * - {{> dir/file.html }} => content of the dir/file.html
+ * - {{? sentense }} => translated('sentense')
  */
 class template {
-
-    /**
-     * This function is constructor for the templates manager. It get storage
-     * where templates files are located. 
-     *
-     * @param string $storage Path to directory with templates.
-     *
-     * @throws Exception code: 2000 (Storage is not directory).
-     *
-     * @return template New templates parser.
-     */
-    public function __construct(string $storage) {
-        if (!is_dir($storage)) {
-            throw new Exception($storage.' is not directory.', 2000);
-        }
-
-        $this->storage = $storage;
-    }
-
-    /** 
-     * This function render template from directory. It get name of the 
-     * template. Default extension for the file is .html, and when not 
-     * specified any extension, then .html is used. 
-     *
-     * @param string $view Name of the view file.
-     * @param array $params Params to replace marks in the template.
-     * 
-     * @return string Rendered content.
-     */
-    public function render(string $view, array $params) : string {
-        $handler = new cache($this->get_view_file($view));
-        
-        return $this->render_content($handler->read(), $params);
-    }
-
-    /** 
-     * This function return path to the file with the template.
-     * 
-     * @param string $view Name of the view.
-     *
-     * @return string Path to the template file on disk.
-     */
-    private function get_view_file(string $view) : string {
-        if (strpos($view, '.') === false) {
-            $view .= '.html';
-        }
-
-        return $this->storage.'/'.$view;
-    }
-
-    /** 
-     * This function render content from the template in variable.
-     *
-     * @param string $content Content to render.
-     * @param array $params Params to replace marks.
-     * 
-     * @return string Rendered content.
-     */
-    public function render_content(string $content, array $params) : string {
-        $start = '<<';
-        $stop = '>>';
-        $length = strlen($start);
-
-        $rendered = '';
-        $last = 0;
-
-        while (true) {
-            $current = strpos($content, $start);
-            
-            if ($current === false) {
-                return $rendered.$content;
-            }
-
-            $current_end = strpos($content, $stop, $current);
-            
-            if ($current_end === false) {
-                return $rendered.$content;
-            }
-            
-            $param_length = $current_end - $current - $length;
-            $param_name = substr($content, $current + $length, $param_length);
-            $param = $this->get_param($params, $param_name);
-
-            $rendered .= substr($content, 0, $current);
-            $rendered .= $param;
-            $content = substr($content, $current_end + $length);
-        }
-    }
     
     /** 
-     * This funciton pulls param out of the params array by its name. 
-     *
-     * @param array $params Params list to pulls from.
-     * @param string $param_name Name of the param to pulls ot out.
+     * This function build new template object.
      * 
-     * @return Content of the param or '' when it not exists in the array.
+     * @param cache $content Template file.
+     * @param templates $templates Templates manager which create template.
+     *
+     * @return template New template.
      */
-    private function get_param(array $params, string $param_name) : string {
-        $param_name = trim($param_name);
-        $path = $this->string_split($param_name, '.');
-        $param = $params;
-
-        for ($count = 0; $count < count($path); $count++) {
-            $current = $path[$count];
-
-            if (!isset($param[$current])) {
-                return '';
-            }
-
-            $param = $param[$current];
-        }
-
-        if (!is_string($param)) return '';
-
-        return $param;
+    public function __construct(cache $content, templates $templates) {
+        $this->content = $content;
+        $this->templates = $templates;
     }
 
     /** 
-     * This function split string into array by given sign.
-     * For example 'A.B', '.' => ['A', 'B'].
+     * This function read content of the file.
      *
-     * @param string $content Content to split.
-     * @param string $search Mark to split by it.
-     *
-     * @return array Splited parts of the string.
+     * @return string_builder Template file content.
      */
-    public function string_split(string $content, string $search) : array {
-        $splited = [];
-        $length = strlen($search);
+    public function get_content() : string_builder {
+        return $this->content->read();
+    }
+
+    /** 
+     * This function is render engine. Is get options to place render-specific
+     * data, and return string_builder with rendered content.
+     *
+     * @param array<string, array|string> $options Render-specific options.
+     * 
+     * @return string_builder Rendered content.
+     */
+    public function render(array $options) : string_builder {
+        $start_char = '{{';
+        $stop_char = '}}';
+        
+        $rendered = new string_builder();
+        $content = $this->get_content();
 
         while (true) {
-            $current = strpos($content, $search);
+            $first = $content->divide($start_char, false);
 
-            if ($current === false) {
-                if (strlen($content) !== 0) {
-                    array_push($splited, $content);
-                }
-
-                return $splited;
-            }
-            
-            $item = substr($content, 0, $current);
-
-            if (strlen($item) !== 0) {
-                array_push($splited, $item);
+            if ($first->right->empty()) {
+                return $rendered->push($content);
             }
 
-            $content = substr($content, $current + $length);
+            $second = $first->right->divide($stop_char, false);
+           
+            if ($second->right->empty()) {
+                return $rendered->push($content);
+            }
+
+            $option_name = $second->left;
+            $before = $first->left;
+            $after = $second->right;
+
+            $option = $this->get_option($option_name, $options);
+
+            $rendered->push($before)->push($option);
+            $content = $after;
         }
     }
 
     /**
-     * @var string $storage This variable store views directory name.
+     * This function render option from the template.
+     * 
+     * @param string_builder $option Option name.
+     * @param array<string, string|array> $options Options to render.
+     *
+     * @return string_builder Rendered option.
      */
-    private string $storage;
+    private function get_option(
+        string_builder $option, 
+        array $options
+    ) : string_builder {
+        $command = $option->letter(0);
+        $option->cut(1, true)->trim();
+
+        switch ($command) {
+            case '>':
+                return $this->get_file_option($option, $options);
+
+            case '?':
+                return $this->get_dictionary_option($option);
+
+            default:
+            case '$':
+                return $this->get_var_option($option, $options);
+        }
+    }
+
+    /**
+     * This function render option which is nested file.
+     *
+     * @param string_builder $option Option file name.
+     * @param array<string, string|array> $options Options to render file.
+     * 
+     * @return string_builder Rendered content.
+     */
+    private function get_file_option(
+        string_builder $option,
+        array $options
+    ) : string_builder {
+        $directory = $this->content->get_directory();
+        $templates = $this->templates->copy($directory);
+
+        return $templates->prepare($option)->render($options);
+    }
+
+    /**
+     * This function translate sentense with templates dictionary.
+     *
+     * @param string_builder $name Sentense to translate.
+     *
+     * @return string_builder Translated sentense.
+     */
+    private function get_dictionary_option(
+        string_builder $name
+    ) : string_builder {
+        return $this->templates->get_dictionary()->translate($name);
+    }
+
+    /**
+     * This function get option which is variable.
+     *
+     * @param string_builder $option Name of the option.
+     * @param array<string, string|array> $options Options to get from.
+     *
+     * @return string_builder Content from the variable.
+     */
+    private function get_var_option(
+        string_builder $option, 
+        array $options
+    ) : string_builder {
+        $parts = $option->split('.');
+        $content = $options;
+
+        foreach ($parts as $part) {
+            $part = $part->get();
+
+            if (isset($content[$part])) {
+                $content = $content[$part];
+                continue;
+            }
+
+            $content = '';
+            break;
+        }
+
+        return new string_builder($content);
+    }
+
+    /**
+     * @var cache $content
+     * Handler to the template file.
+     */
+    private cache $content;
+
+    /**
+     * @var templates $templates
+     * Templates to render sub-template from it.
+     */
+    private templates $templates;
 
 }
 
