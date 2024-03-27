@@ -3,37 +3,20 @@
 namespace cx_appengine;
 
 require_once(__DIR__.'/cache.php');
+require_once(__DIR__.'/cased_exception.php');
 
 /**
  * This is enum which contain exception cases for directory.
  */
-enum directory_exception_case {
-    
-    /** 
-     * This would be throw when directory not exists.
-     */
-    case not_exists;
-
+enum directory_exception_case:string {
+    case not_exists = 
+        'Directory not exists';
 }
 
 /**
  * This is exception for the directory.
  */
-class directory_exception extends \Exception {
-
-    /**
-     * This create exception based on exception case.
-     *
-     * @param directory_exception_case $case Exception case.
-     */
-    public function __construct(directory_exception_case $case) {
-        match ($case) {
-            directory_exception_case::not_exists => 
-                parent::__construct('Directory not exists.', 2000),
-        };
-    }
-
-}
+class directory_exception extends cased_exception {}
 
 /**
  * This is directory wraper, which could wrap directory, and its type.

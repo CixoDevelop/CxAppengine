@@ -5,4 +5,9 @@
     require_once(__DIR__.'/sources/templates.php');
     require_once(__DIR__.'/sources/dictionary.php');
     require_once(__DIR__.'/sources/string_builder.php');
+    require_once(__DIR__.'/sources/validator.php');
+    require_once(__DIR__.'/sources/view.php');
+    require_once(__DIR__.'/sources/activity.php');
+    require_once(__DIR__.'/sources/validable_activity.php');
+    require_once(__DIR__.'/sources/landing_activity.php');
 ?>

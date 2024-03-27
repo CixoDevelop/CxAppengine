@@ -4,45 +4,23 @@ namespace cx_appengine;
 
 require_once(__DIR__.'/string_builder.php');
 require_once(__DIR__.'/directory.php');
+require_once(__DIR__.'/cased_exception.php');
 
 /**
  * This is cases for the cache exception.
  */
-enum cache_exception_case {
+enum cache_exception_case:string {
+    case not_exists = 
+        'File not exists on the disk.';
     
-    /** 
-     * This is thrown when file not exists.
-     */
-    case not_exists;
-
-    /** 
-     * This is thrown when file is not readable.
-     */
-    case not_readable;
-
+    case not_readable = 
+        'File which trying to read is not readable.';
 }
 
 /** 
  * This class is exception for the cache.
  */
-class cache_exception extends \Exception {
-    
-    /** 
-     * This function create new exception.
-     *
-     * @param cache_exception_case $case Exception which would be thrown.
-     */
-    public function __construct(cache_exception_case $case) {
-        match ($case) {
-            cache_exception_case::not_exists => 
-                parent::__construct('File not exists on the disk', 1000),
-
-            cache_exception_case::not_readable => 
-                parent::__construct('File can not being read', 1001),
-        };
-    }
-
-}
+class cache_exception extends cased_exception {}
 
 /** 
  * This class is simple cache for files using in application. It save file
