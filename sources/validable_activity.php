@@ -108,6 +108,17 @@ abstract class validable_activity extends activity {
     }
 
     /**
+     * This function check that item doesn not pass the validation. 
+     * 
+     * @param string $name Name of the item to check.
+     *
+     * @return bool True whe item does not pass validation or false when pass.
+     */
+    protected final function is_not_validated(string $name) : bool {
+        return $this->is_received($name) and !$this->is_validated($name);
+    }
+    
+    /**
      * This function check that item exists on the list of the items to
      * validation.
      *
