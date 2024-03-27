@@ -10,4 +10,5 @@
     require_once(__DIR__.'/sources/activity.php');
     require_once(__DIR__.'/sources/validable_activity.php');
     require_once(__DIR__.'/sources/landing_activity.php');
+    require_once(__DIR__.'/sources/cased_exception.php');
 ?>
