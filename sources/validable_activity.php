@@ -104,7 +104,7 @@ abstract class validable_activity extends activity {
             throw new activity_exception($case);
         }
         
-        return isset($this->validated[$name]);
+        return array_key_exists($name, $this->validated);
     }
 
     /**

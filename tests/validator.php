@@ -23,6 +23,7 @@ $email = new \cx_appengine\validator('?email');
 $phone = new \cx_appengine\validator('phone');
 $bool = new \cx_appengine\validator('bool');
 $int = new \cx_appengine\validator('int');
+$non_int = new \cx_appengine\validator('?int');
 $numeric = new \cx_appengine\validator('numeric');
 
 test($email, "cixo@laptop.com");
@@ -50,5 +51,8 @@ test($numeric, '-10');
 test($numeric, '5.555');
 test($numeric, '1.1');
 test($numeric, 'xd');
+
+test($non_int, '10');
+test($non_int, '');
 
 ?>

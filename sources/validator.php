@@ -93,6 +93,10 @@ class validator {
             return !$this->is_required();
         }
 
+        if (empty($content) and !$this->is_required()) {
+            return true;
+        }
+
         return match ($this->type) {
             'custom' => $this->is_custom($content),
             'bool' => $this->is_bool($content),
@@ -121,6 +125,10 @@ class validator {
     public function parse(?string $content) : mixed {
         if (!$this->is_param_passed($content)) {
             return $content;
+        }
+
+        if (empty($content) and !$this->is_required()) {
+            return null;
         }
 
         return match ($this->type) {
