@@ -72,7 +72,9 @@ abstract class activity {
      *
      * @return array<int, string> Array of the button used in the activity.
      */
-    public abstract function inside_buttons() : array;
+    public function inside_buttons() : array {
+        return [];
+    }
     
     /**
      * This function would return array of names of the inputs passed to the
@@ -82,7 +84,9 @@ abstract class activity {
      * 
      * @return array<string, string> Array with the init activity inputs.
      */
-    public abstract function init_inputs() : array;
+    public function init_inputs() : array {
+        return [];
+    }
     
     /** 
      * This function would to return array of the inputs used inside the 
@@ -92,7 +96,9 @@ abstract class activity {
      *
      * @return array<string, string> Array with inputs used inside activity.
      */
-    public abstract function inside_inputs() : array;
+    public function inside_inputs() : array {
+        return [];
+    }
     
     /**
      * This function would render activity and return rendered view which
@@ -100,7 +106,9 @@ abstract class activity {
      *
      * @return string_builder Rendered form of the activity.
      */
-    public abstract function render() : string_builder;
+    public abstract function render() : string_builder {
+        return new string_builder('');
+    }   
     
     /**
      * This function would process the activity. It will be used to all
@@ -109,7 +117,9 @@ abstract class activity {
      *
      * @return activity This for the chain processing.
      */
-    public abstract function process() : self;
+    public function process() : self {
+        return $this;
+    }
 
     /**
      * This would build new activity.
