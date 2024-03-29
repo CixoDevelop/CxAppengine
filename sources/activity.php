@@ -106,7 +106,7 @@ abstract class activity {
      *
      * @return string_builder Rendered form of the activity.
      */
-    public abstract function render() : string_builder {
+    public function render() : string_builder {
         return new string_builder('');
     }   
     
