@@ -42,7 +42,10 @@ class cache {
      */
     public function __construct(string $name) {
         if (!is_file($name)) {
-            throw new cache_exception(cache_exception_case::not_exists);
+            throw new cache_exception(
+                cache_exception_case::not_exists, 
+                $name
+            );
         }
 
         $this->path = realpath($name);
@@ -67,7 +70,10 @@ class cache {
         restore_error_handler();
 
         if ($content === false) {
-            throw new cache_exception(cache_exception_case::not_readable);
+            throw new cache_exception(
+                cache_exception_case::not_readable, 
+                $this->path
+            );
         }
 
         $this->to_cache($content);
