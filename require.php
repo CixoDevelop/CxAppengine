@@ -1,4 +1,12 @@
 <?php
+    namespace cx_appengine;
+
+    if (defined('CX_APPENGINE_VERSION')) {
+        return;
+    }
+
+    define('CX_APPENGINE_VERSION', 'V1.0');
+
     require_once(__DIR__.'/sources/cache.php');
     require_once(__DIR__.'/sources/directory.php');
     require_once(__DIR__.'/sources/template.php');
